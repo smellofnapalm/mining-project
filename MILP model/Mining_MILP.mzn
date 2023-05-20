@@ -63,5 +63,8 @@ constraint forall(t in 1..NbYears, m in 1..NbMines)(MinedOre[t, m] <= LimExtract
 constraint forall(t in 1..NbYears, m in 1..NbMines)(MineAtWork[t, m] <= MineOpened[t, m]);
 % if we close mine, we cannot use it anymore
 constraint forall(t in 1..NbYears-1, m in 1..NbMines)(MineOpened[t+1, m] <= MineOpened[t, m]);
+% if mine will no longer work, then it is close
+constraint forall(t in 1..NbYears, m in 1..NbMines)
+(forall(n in t..NbYears)(MineAtWork[n, m] = 0) -> MineOpened[t, m] = 0);
 
 solve maximize target;
