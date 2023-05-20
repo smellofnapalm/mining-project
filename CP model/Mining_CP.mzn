@@ -46,22 +46,22 @@ array[1..NbYears] of float: DiscountFactor;
 % DATA TEST
 
 var float: M = 1.0/max(LimExtract);
-array[1..NbYears] of var 0.0..sum(LimExtract): TotalOre :: add_to_output;
-array[1..NbYears, 1..NbMines] of var 0.0..max(LimExtract): MinedOre :: add_to_output;
-array[1..NbYears, 1..NbMines] of var bool: MineOpened :: add_to_output;
-var float: target :: add_to_output = sum(t in 1..NbYears, m in 1..NbMines)(DiscountFactor[t]*(BlendPrice*TotalOre[t] - Royalties[m]*MineOpened[t,m]));
+array[1..NbYears] of var 0.0..sum(LimExtract): TotalExtractedOre :: add_to_output;
+array[1..NbYears, 1..NbMines] of var 0.0..max(LimExtract): ExtractedOre :: add_to_output;
+array[1..NbYears, 1..NbMines] of var bool: MineStatus :: add_to_output;
+var float: target :: add_to_output = sum(t in 1..NbYears, m in 1..NbMines)(DiscountFactor[t]*(BlendPrice*TotalExtractedOre[t] - Royalties[m]*MineStatus[t,m]));
 
 % constraint for num of working mines
-constraint forall(t in 1..NbYears)(count(m in  1..NbMines)(MinedOre[t, m] > 0.0) <= LimWork);
-% we have to achive quality
-constraint forall(t in 1..NbYears)(sum(m in 1..NbMines)(OreQual[m]*MinedOre[t, m]) == BlendQual[t]*TotalOre[t]);
+constraint forall(t in 1..NbYears)(count(m in  1..NbMines)(ExtractedOre[t, m] > 0.0) <= LimWork);
 % tons of extracted ore equal to tons of blended ore
-constraint forall(t in 1..NbYears)(sum(m in 1..NbMines)(MinedOre[t, m]) == TotalOre[t]);
+constraint forall(t in 1..NbYears)(sum(m in 1..NbMines)(ExtractedOre[t, m]) == TotalExtractedOre[t]);
+% we have to achive quality
+constraint forall(t in 1..NbYears)(sum(m in 1..NbMines)(OreQual[m]*ExtractedOre[t, m]) == BlendQual[t]*TotalExtractedOre[t]);
 % we cannot extract from mine more than LimExtract
-constraint forall(t in 1..NbYears, m in 1..NbMines)(MinedOre[t, m] <= LimExtract[m]);
+constraint forall(t in 1..NbYears, m in 1..NbMines)(ExtractedOre[t, m] <= LimExtract[m]);
 % mine can be used iff it is open
-constraint forall(t in 1..NbYears, m in 1..NbMines)(MineOpened[t, m] >= M * MinedOre[t, m]);
+constraint forall(t in 1..NbYears, m in 1..NbMines)(MineStatus[t, m] >= M * ExtractedOre[t, m]);
 % if we close mine, we cannot use it anymore
-constraint forall(m in 1..NbMines) (decreasing(MineOpened[.., m]));
+constraint forall(m in 1..NbMines) (decreasing(MineStatus[.., m]));
 
 solve maximize target;
